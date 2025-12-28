@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import SEO from "../components/SEO";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -35,6 +36,10 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#f7f7f7] font-arcade">
+      <SEO
+        title="Login - Dino Runner"
+        description="Login to play Dino Runner. Compete for the high score!"
+      />
       <div className="w-full max-w-md p-4">
         {message && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 text-xs" role="alert">

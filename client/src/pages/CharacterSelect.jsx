@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/Button";
 import API from "../api/axios";
+import SEO from "../components/SEO";
 
 import kasiImg from "../assets/chars/kasi.png";
 import pranavImg from "../assets/chars/pranav.png";
@@ -64,6 +65,10 @@ export default function CharacterSelect() {
 
   return (
     <div className="min-h-screen bg-[#f7f7f7] font-arcade flex flex-col items-center justify-center p-4">
+      <SEO
+        title="Select Character - Dino Runner"
+        description="Choose your runner and start the game!"
+      />
       <div className="w-full max-w-4xl">
         <div className="text-center mb-12">
           {user && (

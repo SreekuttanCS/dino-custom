@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/Button";
 import API from "../api/axios";
+import SEO from "../components/SEO";
 
 // Import character images
 import kasiImg from "../assets/chars/kasi.png";
@@ -574,6 +575,10 @@ export default function Game() {
 
   return (
     <div className="game-container fixed inset-0 font-arcade select-none">
+      <SEO
+        title="Play Dino Runner"
+        description="Run, jump, and dodge obstacles in this endless runner game!"
+      />
       <div className="absolute top-4 right-4 z-10 flex gap-4 text-[#535353] text-xs md:text-sm select-none font-bold tracking-widest">
         <div
           className={`transition-colors duration-200 ${Math.floor(score) > highScore ? "text-orange-500 animate-pulse" : ""

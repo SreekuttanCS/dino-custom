@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 import Button from '../components/Button';
+import SEO from '../components/SEO';
 
 export default function Leaderboard() {
     const [leaders, setLeaders] = useState([]);
@@ -17,6 +18,10 @@ export default function Leaderboard() {
 
     return (
         <div className="min-h-screen bg-[#f7f7f7] font-arcade flex flex-col items-center p-8 text-[#535353]">
+            <SEO
+                title="Leaderboard - Dino Runner"
+                description="Check the top scores and compete for #1!"
+            />
             <h1 className="text-3xl md:text-4xl mb-12 tracking-widest text-[#535353] border-b-4 border-[#535353] pb-4">TOP RUNNERS</h1>
 
             {!user && (

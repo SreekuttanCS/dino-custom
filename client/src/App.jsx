@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Lazy load pages
@@ -43,22 +44,24 @@ const Layout = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Layout>
-          <Suspense fallback={<Loading />}>
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/character-select" element={<CharacterSelect />} />
-              <Route path="/game" element={<Game />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-            </Routes>
-          </Suspense>
-        </Layout>
-      </Router>
-    </AuthProvider>
+    <HelmetProvider>
+      <AuthProvider>
+        <Router>
+          <Layout>
+            <Suspense fallback={<Loading />}>
+              <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/character-select" element={<CharacterSelect />} />
+                <Route path="/game" element={<Game />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+              </Routes>
+            </Suspense>
+          </Layout>
+        </Router>
+      </AuthProvider>
+    </HelmetProvider>
   );
 }
 
