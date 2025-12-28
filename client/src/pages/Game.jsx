@@ -74,6 +74,8 @@ export default function Game() {
   // Game Refs (Mutable state for loop)
   const gameState = useRef({
     isPlaying: false,
+    waitingToStart: true,
+    isCrashed: false,
     speed: 6,
     score: 0,
     player: {
@@ -143,6 +145,20 @@ export default function Game() {
     }
 
     const handleKeyDown = (e) => {
+      // Start game on first input if waiting
+      if (gameState.current.waitingToStart) {
+        if (e.code === "Space" || e.code === "ArrowUp" || e.code === "ArrowDown") {
+          gameState.current.waitingToStart = false;
+          gameState.current.isPlaying = true;
+          loop();
+          if (e.code !== "ArrowDown") jump();
+          // If down arrow, just start loop (and duck if logic passes below, though duck is usually separate)
+          // Actually, standard behavior: if jump key pressed, start AND jump. If just start, maybe just start?
+          // The prompt says "start only when the player presses the jump key or touches the screen".
+          // Let's stick to jump keys triggering start.
+        }
+      }
+
       if (e.code === "Space" || e.code === "ArrowUp") {
         jump();
       } else if (e.code === "ArrowDown") {
@@ -156,14 +172,35 @@ export default function Game() {
       }
     };
 
-    const handleTouchStart = () => jump();
+    const handleTouchStart = () => {
+      if (gameState.current.waitingToStart) {
+        gameState.current.waitingToStart = false;
+        gameState.current.isPlaying = true;
+        loop();
+        jump();
+      } else {
+        jump();
+      }
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("touchstart", handleTouchStart);
 
+
     // Start Loop
-    gameState.current.isPlaying = true;
+    // gameState.current.isPlaying = true; // REMOVED: Don't start immediately
+    // Initial draw to show character
+    // We need to ensure assets are loaded or at least draw the placeholder
+    // Since faceImg load is async, we might not see it immediately if we just call draw() here without checking.
+    // However, the `draw` function handles `faceImg.current.complete` check.
+    // Let's wait for the image to load before initial draw or just try drawing.
+    if (faceImg.current.complete) {
+      draw();
+    } else {
+      faceImg.current.onload = () => draw();
+    }
+
     let animationFrameId;
 
     const loop = () => {
@@ -255,8 +292,8 @@ export default function Game() {
   };
 
   const jump = () => {
-    const { player } = gameState.current;
-    if (player.grounded && !player.ducking) {
+    const { player, isCrashed } = gameState.current;
+    if (player.grounded && !player.ducking && !isCrashed) {
       player.dy = JUMP_FORCE;
       player.grounded = false;
       playSound(audioCtxRef.current, "jump");
@@ -355,6 +392,9 @@ export default function Game() {
         player.y + hitboxPadding < obs.y + obs.height - hitboxPadding &&
         player.y + player.height - hitboxPadding > obs.y + hitboxPadding
       ) {
+        if (state.isCrashed) return; // Prevent multiple collision triggers
+        state.isCrashed = true;
+
         // Stop run sound immediately
         if (runSoundRef.current) {
           runSoundRef.current.pause();
@@ -470,7 +510,9 @@ export default function Game() {
 
   const restartGame = () => {
     gameState.current = {
-      isPlaying: true,
+      isPlaying: false,
+      waitingToStart: true,
+      isCrashed: false,
       speed: 6,
       score: 0,
       player: {
@@ -488,23 +530,24 @@ export default function Game() {
     };
     setScore(0);
     setIsGameOver(false);
-    const loop = () => {
-      if (gameState.current.isPlaying) {
-        update(audioCtxRef.current);
-        draw();
-        requestAnimationFrame(loop);
-      }
-    };
-    loop();
+
+    // Stop any playing hit sound
+    if (hitSoundRef.current) {
+      hitSoundRef.current.pause();
+      hitSoundRef.current.currentTime = 0;
+    }
+
+    // Don't start loop immediately. Wait for input.
+    // Ensure we draw the initial state so the user sees the character.
+    draw();
   };
 
   return (
     <div className="game-container fixed inset-0 font-arcade select-none">
       <div className="absolute top-4 right-4 z-10 flex gap-4 text-[#535353] text-xs md:text-sm select-none font-bold tracking-widest">
         <div
-          className={`transition-colors duration-200 ${
-            Math.floor(score) > highScore ? "text-orange-500 animate-pulse" : ""
-          }`}
+          className={`transition-colors duration-200 ${Math.floor(score) > highScore ? "text-orange-500 animate-pulse" : ""
+            }`}
         >
           HI{" "}
           {Math.max(highScore, Math.floor(score)).toString().padStart(5, "0")}
