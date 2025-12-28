@@ -1,11 +1,20 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './pages/Login';
-import Register from './pages/Register';
 
-import CharacterSelect from './pages/CharacterSelect';
-import Leaderboard from './pages/Leaderboard';
-import Game from './pages/Game';
+// Lazy load pages
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const CharacterSelect = lazy(() => import('./pages/CharacterSelect'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+const Game = lazy(() => import('./pages/Game'));
+
+// Simple loading component
+const Loading = () => (
+  <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white font-arcade">
+    <div className="text-xl animate-pulse">LOADING...</div>
+  </div>
+);
 
 // Layout component to handle global UI (Home button)
 const Layout = ({ children }) => {
@@ -37,14 +46,16 @@ function App() {
     <AuthProvider>
       <Router>
         <Layout>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/character-select" element={<CharacterSelect />} />
-            <Route path="/game" element={<Game />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-          </Routes>
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/character-select" element={<CharacterSelect />} />
+              <Route path="/game" element={<Game />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+            </Routes>
+          </Suspense>
         </Layout>
       </Router>
     </AuthProvider>

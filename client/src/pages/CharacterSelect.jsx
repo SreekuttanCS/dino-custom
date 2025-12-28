@@ -118,6 +118,7 @@ export default function CharacterSelect() {
                 <img
                   src={char.img}
                   alt={char.name}
+                  loading="lazy"
                   className={`w-full h-full object-cover ${selectedId === char.id ? "" : "grayscale"
                     }`}
                 />
