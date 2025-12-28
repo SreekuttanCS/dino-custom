@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans text-[#535353] bg-[#f7f7f7] min-h-screen overflow-hidden;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+
+  /* Classic Dino Game Fonts */
+  .font-arcade {
+    font-family: 'Press Start 2P', cursive;
+  }
+
+  /* Classic Button Style */
+  .btn-classic {
+    @apply px-6 py-2 bg-[#f7f7f7] border-2 border-[#535353] text-[#535353] font-['Press_Start_2P'] text-sm hover:bg-[#535353] hover:text-white transition-colors duration-0 focus:outline-none;
+  }
+
+  .game-container {
+    @apply w-full h-full flex items-center justify-center relative bg-[#f7f7f7];
+  }
+}
