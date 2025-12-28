@@ -18,10 +18,17 @@ const CHARACTERS = [
 ];
 
 export default function CharacterSelect() {
-  // const { user, updateCharacter } = useAuth();
+  const { user } = useAuth(); // Get user from context
   const [selectedId, setSelectedId] = useState(0);
-  // const [uploading, setUploading] = useState(false); // CUSTOM
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login", {
+        state: { message: "Please log in to select a driver and save your score." }
+      });
+    }
+  }, [user, navigate]);
 
   // const [faceFile, setFaceFile] = useState(null);
   // const [runSoundFile, setRunSoundFile] = useState(null);
@@ -59,6 +66,12 @@ export default function CharacterSelect() {
     <div className="min-h-screen bg-[#f7f7f7] font-arcade flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <div className="text-center mb-12">
+          {user && (
+            <div className="mb-4 text-[#535353] border-b-2 border-[#535353] pb-2 inline-block px-4">
+              <p className="text-sm font-bold">PLAYER: {user.name || user.email?.split('@')[0] || "UNKNOWN"}</p>
+              <p className="text-xs">HIGH SCORE: {user.highScore || 0}</p>
+            </div>
+          )}
           <h1 className="text-3xl md:text-4xl text-[#535353] mb-4 tracking-widest">
             SELECT DRIVER
           </h1>
@@ -75,19 +88,17 @@ export default function CharacterSelect() {
               className={`
                 relative p-4 border-4 cursor-pointer transition-all duration-0
                 flex flex-col items-center
-                ${
-                  selectedId === char.id
-                    ? "border-[#535353] bg-[#535353] text-white scale-110 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]"
-                    : "border-[#535353] bg-white text-[#535353] hover:bg-gray-100"
+                ${selectedId === char.id
+                  ? "border-[#535353] bg-[#535353] text-white scale-110 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]"
+                  : "border-[#535353] bg-white text-[#535353] hover:bg-gray-100"
                 }
               `}
             >
               <div
-                className={`w-24 h-24 md:w-28 md:h-28 mb-4 flex items-center justify-center overflow-hidden border-2 ${
-                  selectedId === char.id
+                className={`w-24 h-24 md:w-28 md:h-28 mb-4 flex items-center justify-center overflow-hidden border-2 ${selectedId === char.id
                     ? "border-white bg-[#535353]"
                     : "border-[#535353] bg-[#f7f7f7]"
-                }`}
+                  }`}
               >
                 {/* ================= CUSTOM CHARACTER IMAGE ================= */}
                 {/* {char.isCustom ? (
@@ -107,9 +118,8 @@ export default function CharacterSelect() {
                 <img
                   src={char.img}
                   alt={char.name}
-                  className={`w-full h-full object-cover ${
-                    selectedId === char.id ? "" : "grayscale"
-                  }`}
+                  className={`w-full h-full object-cover ${selectedId === char.id ? "" : "grayscale"
+                    }`}
                 />
                 {/* )} */}
                 {/* ========================================================== */}

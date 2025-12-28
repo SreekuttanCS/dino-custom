@@ -9,6 +9,7 @@ import kasiImg from "../assets/chars/kasi.png";
 import pranavImg from "../assets/chars/pranav.png";
 import akhilImg from "../assets/chars/akhil.png";
 import vishalImg from "../assets/chars/vishal.png";
+import alexImg from "../assets/chars/alex.jpg";
 
 // Import character sounds (you'll need to add these files)
 import kasiRun from "../assets/sounds/kasi_run3.mp3";
@@ -50,13 +51,20 @@ const CHARACTER_DATA = [
     runSound: vishalRun,
     hitSound: vishalHit,
   },
+  {
+    id: 4,
+    name: "Alex",
+    img: alexImg,
+    // runSound: alexRun, // Add sound if available
+    // hitSound: alexHit, // Add sound if available
+  },
 ];
 
 // Game Constants
 const GRAVITY = 0.6;
-const JUMP_FORCE = -12;
+const JUMP_FORCE = -11; // Tuned for better feel
 const GROUND_HEIGHT = 50;
-const SPAWN_RATE_INITIAL = 100;
+const SPAWN_RATE_INITIAL = 60; // Faster start
 const SPEED_INCREMENT = 0.5;
 
 export default function Game() {
@@ -343,7 +351,7 @@ export default function Game() {
 
     const randomSpawnRate =
       SPAWN_RATE_INITIAL -
-      Math.min(state.speed * 2, 60) +
+      Math.min(state.speed * 2, 40) + // Cap reduction to keep it playable
       Math.floor(Math.random() * 20);
 
     if (state.frames % Math.floor(randomSpawnRate) === 0) {
@@ -353,11 +361,11 @@ export default function Game() {
         const heightChoice = Math.random();
         let yPos;
         if (heightChoice < 0.3) {
-          yPos = canvas.height - GROUND_HEIGHT - 30;
+          yPos = canvas.height - GROUND_HEIGHT - 30; // Low
         } else if (heightChoice < 0.7) {
-          yPos = canvas.height - GROUND_HEIGHT - 50;
+          yPos = canvas.height - GROUND_HEIGHT - 50; // Mid
         } else {
-          yPos = canvas.height - GROUND_HEIGHT - 70;
+          yPos = canvas.height - GROUND_HEIGHT - 65; // High (jumpable/duckable)
         }
 
         obstacles.push({
@@ -384,13 +392,14 @@ export default function Game() {
       let obs = obstacles[i];
       obs.x -= state.speed;
 
-      const hitboxPadding = 4;
+      const hitboxPadding = 10; // Increased padding to prevent cheap hits
 
       if (
         player.x + hitboxPadding < obs.x + obs.width - hitboxPadding &&
         player.x + player.width - hitboxPadding > obs.x + hitboxPadding &&
-        player.y + hitboxPadding < obs.y + obs.height - hitboxPadding &&
-        player.y + player.height - hitboxPadding > obs.y + hitboxPadding
+        player.x + player.width - hitboxPadding > obs.x + hitboxPadding &&
+        player.y + hitboxPadding < obs.y + obs.height - (obs.type === 'bird' ? 10 : hitboxPadding) && // Reduce top hitbox for birds
+        player.y + player.height - hitboxPadding > obs.y + (obs.type === 'bird' ? 10 : hitboxPadding) // Reduce bottom hitbox for birds
       ) {
         if (state.isCrashed) return; // Prevent multiple collision triggers
         state.isCrashed = true;
@@ -416,7 +425,8 @@ export default function Game() {
         state.score++;
         setScore(state.score);
         if (state.score % 5 === 0 && state.speed < 20)
-          state.speed += SPEED_INCREMENT;
+          if (state.score % 50 === 0 && state.score > 0 && state.speed < 25) // Increase every 50 points
+            state.speed += 1;
       }
     }
   };
@@ -445,6 +455,9 @@ export default function Game() {
       ctx.fillStyle = "#f7f7f7";
       ctx.fillRect(player.width - 12, 4, 4, 4);
     }
+    // Debug hitbox visualization (optional, remove in prod)
+    // ctx.strokeStyle = "red";
+    // ctx.strokeRect(0, 0, player.width, player.height);
     ctx.restore();
 
     // Obstacles
@@ -569,10 +582,24 @@ export default function Game() {
             GAME OVER
           </h2>
 
-          <div className="mb-4 text-[#535353]">
-            <div className="w-12 h-12 bg-black mx-auto relative">
-              <div className="absolute top-2 -left-2 w-4 h-4 bg-black"></div>
+          <div className="mb-4 text-[#535353] flex flex-col items-center">
+            <div className="w-16 h-16 mb-2">
+              {faceImg.current.src ? (
+                <img
+                  src={faceImg.current.src}
+                  alt="Character"
+                  className="w-full h-full object-contain pixelated"
+                  style={{ imageRendering: "pixelated" }}
+                />
+              ) : (
+                <div className="w-12 h-12 bg-black mx-auto relative">
+                  <div className="absolute top-2 -left-2 w-4 h-4 bg-black"></div>
+                </div>
+              )}
             </div>
+            <p className="text-xl font-bold">
+              SCORE: {Math.floor(gameState.current.score)}
+            </p>
           </div>
 
           {isSaving ? (
@@ -582,6 +609,13 @@ export default function Game() {
           ) : (
             <>
               <div className="flex gap-4">
+                <button
+                  onClick={() => navigate("/character-select")}
+                  className="btn-classic text-2xl px-6 py-4"
+                  title="Home"
+                >
+                  🏠
+                </button>
                 <button
                   onClick={restartGame}
                   className="btn-classic text-2xl px-6 py-4"

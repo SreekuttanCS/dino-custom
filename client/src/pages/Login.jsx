@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Input from "../components/Input";
 import Button from "../components/Button";
@@ -11,6 +11,9 @@ export default function Login() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
+  const location = useLocation();
+  const message = location.state?.message;
+
   useEffect(() => {
     if (user) {
       navigate("/character-select");
@@ -21,6 +24,9 @@ export default function Login() {
     e.preventDefault();
     try {
       await login(email, password);
+      // Removed generic navigation here to relying on AuthContext or conditional navigation
+      // Actually, let's keep it but ideally we go back to where we came from if it was passing state
+      // For now, prompt implies standard flow.
       navigate("/character-select");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
@@ -30,6 +36,12 @@ export default function Login() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#f7f7f7] font-arcade">
       <div className="w-full max-w-md p-4">
+        {message && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 text-xs" role="alert">
+            <p className="font-bold">NOTE</p>
+            <p>{message}</p>
+          </div>
+        )}
         <div className="text-center mb-8">
           <h1 className="text-4xl text-[#535353] mb-2 tracking-widest">
             DINO RUNNER
