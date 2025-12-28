@@ -13,8 +13,8 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Don't show home button on login/register pages
-  const isAuthPage = ['/login', '/register', '/'].includes(location.pathname);
+  // Don't show home button on login/register pages OR character select
+  const isAuthPage = ['/login', '/register', '/', '/character-select'].includes(location.pathname);
 
   return (
     <div className="app w-full h-screen bg-gray-900 text-white font-sans relative">

@@ -67,12 +67,12 @@ export default function CharacterSelect() {
       <div className="w-full max-w-4xl">
         <div className="text-center mb-12">
           {user && (
-            <div className="mb-4 text-[#535353] border-b-2 border-[#535353] pb-2 inline-block px-4">
-              <p className="text-sm font-bold">PLAYER: {user.name || user.email?.split('@')[0] || "UNKNOWN"}</p>
-              <p className="text-xs">HIGH SCORE: {user.highScore || 0}</p>
+            <div className="mb-4 text-[#535353] border-b-2 border-[#535353] pb-2 inline-block px-4 max-w-full">
+              <p className="text-xs md:text-sm font-bold truncate">PLAYER: {user.name || user.email?.split('@')[0] || "UNKNOWN"}</p>
+              <p className="text-[10px] md:text-xs">HIGH SCORE: {user.highScore || 0}</p>
             </div>
           )}
-          <h1 className="text-3xl md:text-4xl text-[#535353] mb-4 tracking-widest">
+          <h1 className="text-2xl md:text-4xl text-[#535353] mb-4 tracking-widest">
             SELECT DRIVER
           </h1>
           <p className="text-[#535353] text-[10px] uppercase">
@@ -95,9 +95,9 @@ export default function CharacterSelect() {
               `}
             >
               <div
-                className={`w-24 h-24 md:w-28 md:h-28 mb-4 flex items-center justify-center overflow-hidden border-2 ${selectedId === char.id
-                    ? "border-white bg-[#535353]"
-                    : "border-[#535353] bg-[#f7f7f7]"
+                className={`w-16 h-16 md:w-28 md:h-28 mb-2 md:mb-4 flex items-center justify-center overflow-hidden border-2 ${selectedId === char.id
+                  ? "border-white bg-[#535353]"
+                  : "border-[#535353] bg-[#f7f7f7]"
                   }`}
               >
                 {/* ================= CUSTOM CHARACTER IMAGE ================= */}

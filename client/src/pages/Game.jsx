@@ -78,6 +78,9 @@ export default function Game() {
   const [isGameOver, setIsGameOver] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [highScore, setHighScore] = useState(user?.highScore || 0);
+  const [showMilestone, setShowMilestone] = useState(false);
+  const [showHighScoreMsg, setShowHighScoreMsg] = useState(false);
+  const hasBeatenHighScore = useRef(false);
 
   // Game Refs (Mutable state for loop)
   const gameState = useRef({
@@ -424,9 +427,23 @@ export default function Game() {
         i--;
         state.score++;
         setScore(state.score);
-        if (state.score % 5 === 0 && state.speed < 20)
-          if (state.score % 50 === 0 && state.score > 0 && state.speed < 25) // Increase every 50 points
-            state.speed += 1;
+        if (state.score % 100 === 0 && state.score > 0) {
+          // Milestone visual
+          setShowMilestone(true);
+          setTimeout(() => setShowMilestone(false), 2000);
+
+          // Speed increase
+          if (state.speed < 25) {
+            state.speed += 0.5; // Smoother increment
+          }
+        }
+
+        // High score beat check
+        if (user && state.score > user.highScore && !hasBeatenHighScore.current) {
+          hasBeatenHighScore.current = true;
+          setShowHighScoreMsg(true);
+          setTimeout(() => setShowHighScoreMsg(false), 3000);
+        }
       }
     }
   };
@@ -567,6 +584,18 @@ export default function Game() {
         </div>
         <div>{Math.floor(score).toString().padStart(5, "0")}</div>
       </div>
+
+      {/* Visual Feedback Overlays */}
+      {showMilestone && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 text-4xl md:text-6xl font-arcade font-bold text-[#535353] animate-bounce pointer-events-none select-none z-10 opacity-50">
+          {Math.floor(score)}!
+        </div>
+      )}
+      {showHighScoreMsg && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-xl md:text-2xl font-arcade font-bold text-yellow-600 animate-pulse pointer-events-none text-center bg-white/90 p-2 border-2 border-yellow-500 rounded shadow-lg z-30">
+          NEW RECORD!
+        </div>
+      )}
 
       <canvas
         ref={canvasRef}
