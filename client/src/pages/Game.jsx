@@ -3,12 +3,14 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/Button";
 import API from "../api/axios";
+import SEO from "../components/SEO";
 
 // Import character images
 import kasiImg from "../assets/chars/kasi.png";
 import pranavImg from "../assets/chars/pranav.png";
 import akhilImg from "../assets/chars/akhil.png";
 import vishalImg from "../assets/chars/vishal.png";
+import alexImg from "../assets/chars/alex.jpg";
 
 // Import character sounds (you'll need to add these files)
 import kasiRun from "../assets/sounds/kasi_run3.mp3";
@@ -50,13 +52,20 @@ const CHARACTER_DATA = [
     runSound: vishalRun,
     hitSound: vishalHit,
   },
+  {
+    id: 4,
+    name: "Alex",
+    img: alexImg,
+    // runSound: alexRun, // Add sound if available
+    // hitSound: alexHit, // Add sound if available
+  },
 ];
 
 // Game Constants
 const GRAVITY = 0.6;
-const JUMP_FORCE = -12;
+const JUMP_FORCE = -11; // Tuned for better feel
 const GROUND_HEIGHT = 50;
-const SPAWN_RATE_INITIAL = 100;
+const SPAWN_RATE_INITIAL = 60; // Faster start
 const SPEED_INCREMENT = 0.5;
 
 export default function Game() {
@@ -70,10 +79,15 @@ export default function Game() {
   const [isGameOver, setIsGameOver] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [highScore, setHighScore] = useState(user?.highScore || 0);
+  const [showMilestone, setShowMilestone] = useState(false);
+  const [showHighScoreMsg, setShowHighScoreMsg] = useState(false);
+  const hasBeatenHighScore = useRef(false);
 
   // Game Refs (Mutable state for loop)
   const gameState = useRef({
     isPlaying: false,
+    waitingToStart: true,
+    isCrashed: false,
     speed: 6,
     score: 0,
     player: {
@@ -143,6 +157,20 @@ export default function Game() {
     }
 
     const handleKeyDown = (e) => {
+      // Start game on first input if waiting
+      if (gameState.current.waitingToStart) {
+        if (e.code === "Space" || e.code === "ArrowUp" || e.code === "ArrowDown") {
+          gameState.current.waitingToStart = false;
+          gameState.current.isPlaying = true;
+          loop();
+          if (e.code !== "ArrowDown") jump();
+          // If down arrow, just start loop (and duck if logic passes below, though duck is usually separate)
+          // Actually, standard behavior: if jump key pressed, start AND jump. If just start, maybe just start?
+          // The prompt says "start only when the player presses the jump key or touches the screen".
+          // Let's stick to jump keys triggering start.
+        }
+      }
+
       if (e.code === "Space" || e.code === "ArrowUp") {
         jump();
       } else if (e.code === "ArrowDown") {
@@ -156,14 +184,35 @@ export default function Game() {
       }
     };
 
-    const handleTouchStart = () => jump();
+    const handleTouchStart = () => {
+      if (gameState.current.waitingToStart) {
+        gameState.current.waitingToStart = false;
+        gameState.current.isPlaying = true;
+        loop();
+        jump();
+      } else {
+        jump();
+      }
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("touchstart", handleTouchStart);
 
+
     // Start Loop
-    gameState.current.isPlaying = true;
+    // gameState.current.isPlaying = true; // REMOVED: Don't start immediately
+    // Initial draw to show character
+    // We need to ensure assets are loaded or at least draw the placeholder
+    // Since faceImg load is async, we might not see it immediately if we just call draw() here without checking.
+    // However, the `draw` function handles `faceImg.current.complete` check.
+    // Let's wait for the image to load before initial draw or just try drawing.
+    if (faceImg.current.complete) {
+      draw();
+    } else {
+      faceImg.current.onload = () => draw();
+    }
+
     let animationFrameId;
 
     const loop = () => {
@@ -255,8 +304,8 @@ export default function Game() {
   };
 
   const jump = () => {
-    const { player } = gameState.current;
-    if (player.grounded && !player.ducking) {
+    const { player, isCrashed } = gameState.current;
+    if (player.grounded && !player.ducking && !isCrashed) {
       player.dy = JUMP_FORCE;
       player.grounded = false;
       playSound(audioCtxRef.current, "jump");
@@ -306,7 +355,7 @@ export default function Game() {
 
     const randomSpawnRate =
       SPAWN_RATE_INITIAL -
-      Math.min(state.speed * 2, 60) +
+      Math.min(state.speed * 2, 40) + // Cap reduction to keep it playable
       Math.floor(Math.random() * 20);
 
     if (state.frames % Math.floor(randomSpawnRate) === 0) {
@@ -316,11 +365,11 @@ export default function Game() {
         const heightChoice = Math.random();
         let yPos;
         if (heightChoice < 0.3) {
-          yPos = canvas.height - GROUND_HEIGHT - 30;
+          yPos = canvas.height - GROUND_HEIGHT - 30; // Low
         } else if (heightChoice < 0.7) {
-          yPos = canvas.height - GROUND_HEIGHT - 50;
+          yPos = canvas.height - GROUND_HEIGHT - 50; // Mid
         } else {
-          yPos = canvas.height - GROUND_HEIGHT - 70;
+          yPos = canvas.height - GROUND_HEIGHT - 65; // High (jumpable/duckable)
         }
 
         obstacles.push({
@@ -347,14 +396,18 @@ export default function Game() {
       let obs = obstacles[i];
       obs.x -= state.speed;
 
-      const hitboxPadding = 4;
+      const hitboxPadding = 10; // Increased padding to prevent cheap hits
 
       if (
         player.x + hitboxPadding < obs.x + obs.width - hitboxPadding &&
         player.x + player.width - hitboxPadding > obs.x + hitboxPadding &&
-        player.y + hitboxPadding < obs.y + obs.height - hitboxPadding &&
-        player.y + player.height - hitboxPadding > obs.y + hitboxPadding
+        player.x + player.width - hitboxPadding > obs.x + hitboxPadding &&
+        player.y + hitboxPadding < obs.y + obs.height - (obs.type === 'bird' ? 10 : hitboxPadding) && // Reduce top hitbox for birds
+        player.y + player.height - hitboxPadding > obs.y + (obs.type === 'bird' ? 10 : hitboxPadding) // Reduce bottom hitbox for birds
       ) {
+        if (state.isCrashed) return; // Prevent multiple collision triggers
+        state.isCrashed = true;
+
         // Stop run sound immediately
         if (runSoundRef.current) {
           runSoundRef.current.pause();
@@ -375,8 +428,23 @@ export default function Game() {
         i--;
         state.score++;
         setScore(state.score);
-        if (state.score % 5 === 0 && state.speed < 20)
-          state.speed += SPEED_INCREMENT;
+        if (state.score % 100 === 0 && state.score > 0) {
+          // Milestone visual
+          setShowMilestone(true);
+          setTimeout(() => setShowMilestone(false), 2000);
+
+          // Speed increase
+          if (state.speed < 25) {
+            state.speed += 0.5; // Smoother increment
+          }
+        }
+
+        // High score beat check
+        if (user && state.score > user.highScore && !hasBeatenHighScore.current) {
+          hasBeatenHighScore.current = true;
+          setShowHighScoreMsg(true);
+          setTimeout(() => setShowHighScoreMsg(false), 3000);
+        }
       }
     }
   };
@@ -405,6 +473,9 @@ export default function Game() {
       ctx.fillStyle = "#f7f7f7";
       ctx.fillRect(player.width - 12, 4, 4, 4);
     }
+    // Debug hitbox visualization (optional, remove in prod)
+    // ctx.strokeStyle = "red";
+    // ctx.strokeRect(0, 0, player.width, player.height);
     ctx.restore();
 
     // Obstacles
@@ -470,7 +541,9 @@ export default function Game() {
 
   const restartGame = () => {
     gameState.current = {
-      isPlaying: true,
+      isPlaying: false,
+      waitingToStart: true,
+      isCrashed: false,
       speed: 6,
       score: 0,
       player: {
@@ -488,29 +561,46 @@ export default function Game() {
     };
     setScore(0);
     setIsGameOver(false);
-    const loop = () => {
-      if (gameState.current.isPlaying) {
-        update(audioCtxRef.current);
-        draw();
-        requestAnimationFrame(loop);
-      }
-    };
-    loop();
+
+    // Stop any playing hit sound
+    if (hitSoundRef.current) {
+      hitSoundRef.current.pause();
+      hitSoundRef.current.currentTime = 0;
+    }
+
+    // Don't start loop immediately. Wait for input.
+    // Ensure we draw the initial state so the user sees the character.
+    draw();
   };
 
   return (
     <div className="game-container fixed inset-0 font-arcade select-none">
+      <SEO
+        title="Play Dino Runner"
+        description="Run, jump, and dodge obstacles in this endless runner game!"
+      />
       <div className="absolute top-4 right-4 z-10 flex gap-4 text-[#535353] text-xs md:text-sm select-none font-bold tracking-widest">
         <div
-          className={`transition-colors duration-200 ${
-            Math.floor(score) > highScore ? "text-orange-500 animate-pulse" : ""
-          }`}
+          className={`transition-colors duration-200 ${Math.floor(score) > highScore ? "text-orange-500 animate-pulse" : ""
+            }`}
         >
           HI{" "}
           {Math.max(highScore, Math.floor(score)).toString().padStart(5, "0")}
         </div>
         <div>{Math.floor(score).toString().padStart(5, "0")}</div>
       </div>
+
+      {/* Visual Feedback Overlays */}
+      {showMilestone && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 text-4xl md:text-6xl font-arcade font-bold text-[#535353] animate-bounce pointer-events-none select-none z-10 opacity-50">
+          {Math.floor(score)}!
+        </div>
+      )}
+      {showHighScoreMsg && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-xl md:text-2xl font-arcade font-bold text-yellow-600 animate-pulse pointer-events-none text-center bg-white/90 p-2 border-2 border-yellow-500 rounded shadow-lg z-30">
+          NEW RECORD!
+        </div>
+      )}
 
       <canvas
         ref={canvasRef}
@@ -526,10 +616,24 @@ export default function Game() {
             GAME OVER
           </h2>
 
-          <div className="mb-4 text-[#535353]">
-            <div className="w-12 h-12 bg-black mx-auto relative">
-              <div className="absolute top-2 -left-2 w-4 h-4 bg-black"></div>
+          <div className="mb-4 text-[#535353] flex flex-col items-center">
+            <div className="w-16 h-16 mb-2">
+              {faceImg.current.src ? (
+                <img
+                  src={faceImg.current.src}
+                  alt="Character"
+                  className="w-full h-full object-contain pixelated"
+                  style={{ imageRendering: "pixelated" }}
+                />
+              ) : (
+                <div className="w-12 h-12 bg-black mx-auto relative">
+                  <div className="absolute top-2 -left-2 w-4 h-4 bg-black"></div>
+                </div>
+              )}
             </div>
+            <p className="text-xl font-bold">
+              SCORE: {Math.floor(gameState.current.score)}
+            </p>
           </div>
 
           {isSaving ? (
@@ -539,6 +643,13 @@ export default function Game() {
           ) : (
             <>
               <div className="flex gap-4">
+                <button
+                  onClick={() => navigate("/character-select")}
+                  className="btn-classic text-2xl px-6 py-4"
+                  title="Home"
+                >
+                  🏠
+                </button>
                 <button
                   onClick={restartGame}
                   className="btn-classic text-2xl px-6 py-4"
