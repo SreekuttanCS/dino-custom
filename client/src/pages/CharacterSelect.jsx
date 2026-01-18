@@ -109,7 +109,7 @@ export default function CharacterSelect() {
                 {/* {char.isCustom ? (
                   user?.customCharacter?.face ? (
                     <img
-                      src={`http://localhost:5000/${user.customCharacter.face.replace(
+                      src={`${import.meta.env.VITE_API_URL}/${user.customCharacter.face.replace(
                         /\\/g,
                         "/"
                       )}?t=${Date.now()}`}

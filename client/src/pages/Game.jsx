@@ -129,15 +129,15 @@ export default function Game() {
       // Custom character
       if (user.customCharacter.face) {
         const facePath = user.customCharacter.face.replace(/\\/g, "/");
-        faceImg.current.src = `http://localhost:5000/${facePath}?t=${Date.now()}`;
+        faceImg.current.src = `${import.meta.env.VITE_API_URL}/${facePath}?t=${Date.now()}`;
       }
       if (user.customCharacter.runSound) {
         const soundPath = user.customCharacter.runSound.replace(/\\/g, "/");
-        runSoundRef.current = new Audio(`http://localhost:5000/${soundPath}`);
+        runSoundRef.current = new Audio(`${import.meta.env.VITE_API_URL}/${soundPath}`);
       }
       if (user.customCharacter.hitSound) {
         const hitPath = user.customCharacter.hitSound.replace(/\\/g, "/");
-        hitSoundRef.current = new Audio(`http://localhost:5000/${hitPath}`);
+        hitSoundRef.current = new Audio(`${import.meta.env.VITE_API_URL}/${hitPath}`);
       }
     } else if (characterId >= 0 && characterId < CHARACTER_DATA.length) {
       // Built-in character
